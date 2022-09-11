@@ -1,0 +1,77 @@
+Laboratorio#2
+```{r}
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(nycflights13)
+install.packages("data.table")
+library(data.table)
+
+flights_dt<- as.data.table(flights)
+airports_dt<- as.data.table(airports)
+planes_dt <- as.data.table(planes)
+airlines_dt <- as.data.table(airlines)
+weather_dt<- as.data.table(weather)
+
+#INNER_JOIN
+union_total <- flights_dt%>%
+  inner_join(planes_dt,by=c("tailnum"))%>%
+  inner_join(airlines_dt,by=c("carrier"))%>%
+  inner_join(airports_dt,by=c("origin"="faa"))%>%
+  inner_join(weather_dt,by=c("origin"))
+
+head(union_total)
+
+flights_sel <- flights_dt%>%
+  count(year,month,day)%>%
+  filter(n>1000)%>%
+  arrange(desc(n))
+flights_sel
+flights_dt
+
+flights_selected<- flights_dt%>%
+  select(year:day,hour,origin,dest,tailnum,carrier,arr_delay,dep_delay)
+
+flights_selected
+
+airlines_flights_selected<- airlines_dt%>%
+  left_join(flights_selected,by=c("carrier"))%>%
+  select(-origin,-dest)%>%
+  mutate(tot_delay=arr_delay+dep_delay)
+airlines_flights_selected
+
+weather_dt
+flights_selected
+precip_delay<- flights_selected%>%
+  inner_join(weather_dt,by=c("origin"))
+
+precip_delay
+
+library(ggplot2)
+
+ggplot(precip_delay,aes(x=precip,y=delay))+geom_dotplot()
+
+flights_dt
+airports_dt
+
+flights_airports_dt<- flights_dt%>%
+  filter(year==2013,month==5,day==10)%>%
+  group_by(dest)%>%
+  summarize(delay=mean(arr_delay,na.rm=T))%>%
+  inner_join(airports_dt,by=c("dest"="faa"))
+flights_airports_dt
+
+ggplot(flights_airports_dt,aes(x=lon,y=lat,color=delay,size=delay))+geom_point()
+
+flights_planes_dt<-flights_dt%>%
+  inner_join(planes_dt,by=c("tailnum"),suffix=c("_flights","_planes"))%>%
+  transmute(tailnum,manufacturer,pi=(dep_delay+arr_delay)/air_time)
+
+flights_planes_dt
+
+
+
+
+
+```
+
